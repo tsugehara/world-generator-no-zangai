@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script type="text/javascript" src="js/jgame.js"></script>
+<script type="text/javascript" src="js/map.jgame.js"></script>
+<script type="text/javascript" src="js/three.js/build/three.js"></script>
+<script type="text/javascript" src="js/three.js/examples/js/controls/OrbitControls.js"></script>
+<script type="text/javascript">
+var earth_switch;
+onload = function() {
+	var game = new Game(400, 400);
+	var scene;
+	game.preload({
+		img: "仮説3.png",
+		ep400: "ep400.jpg"
+	});
+	var x_con = document.getElementById("x");
+	var y_con = document.getElementById("y");
+	var lx_con = document.getElementById("lx");
+	var ly_con = document.getElementById("ly");
+	var scale = {
+		x: 180 / (400 / 2),
+		y: 90 / (200 / 2)
+	}
+	var getLatitude = function(y) {
+		return (100-y) * scale.y;
+	}
+	var getLongitude = function(x) {
+		return (200-x) * scale.x;
+	}
+	//sanson to 
+	var onmousedown = function(e) {
+		var map = jgwg.Map.Util.EP2Sanson(scene.world, scene.world.map);
+		scene.pixel2.clear(255, 255, 255, 255);
+		scene.world.render(scene.pixel2.imageData, map);
+		scene.pixel2.updated();
+	}
+
+	var onmousemove = function(e) {
+		var pos = {
+			x: e.offsetX,
+			y: e.offsetY
+		}
+		if (pos.x < 0 || pos.y < 0 || pos.x >= 400 || pos.y >= 200)
+			return;
+		x_con.innerHTML = pos.x;
+		y_con.innerHTML = pos.y;
+		pos.lx = Math.round(getLongitude(pos.x) * 100) / 100;//(200-pos.x) * scale.x;
+		pos.ly = Math.round(getLatitude(pos.y) * 100) / 100;//(100-pos.y) * scale.y;
+
+		lx_con.innerHTML = pos.lx;
+		ly_con.innerHTML = pos.ly;
+	}
+	var onmouseup = function(e) {
+
+	}
+
+	var renderer;
+	var flag = false;
+	var material;
+	var camera;
+	var t_scene;
+	var light;
+	var ambient;
+	var geometry;
+	var mesh;
+	var controls;
+	earth_switch = function() {
+		var texture  = new THREE.Texture(scene.createMap());
+		texture.needsUpdate = true;
+		var bumpTexture = new THREE.Texture(scene.createBumpMap());
+		bumpTexture.needsUpdate = true;
+		if (! renderer) {
+			renderer = new THREE.WebGLRenderer({ antialias:true });
+			renderer.setSize(200, 200);
+			renderer.setClearColorHex(0x000000, 1);
+			document.getElementById("three").appendChild(renderer.domElement);
+
+			t_scene = new THREE.Scene();
+
+			camera = new THREE.PerspectiveCamera(15, 500 / 500);
+			camera.position = new THREE.Vector3(0, 0, 8);
+			camera.lookAt(new THREE.Vector3(0, 0, 0));
+			t_scene.add(camera);
+			
+			light = new THREE.DirectionalLight(0xcccccc);
+			light.position = new THREE.Vector3(0.577, 0.577, 0.577);
+			ambient = new THREE.AmbientLight(0x333333);
+			t_scene.add(light);
+			t_scene.add(ambient);
+
+			geometry = new THREE.SphereGeometry(1, 32, 16);
+			material = new THREE.MeshPhongMaterial({
+				color: 0xffffff,
+				ambient: 0xffffff,
+				specular: 0xcccccc,
+				shininess:50,
+				//metal:true,
+				//bumpMap: THREE.ImageUtils.loadTexture('img/ep400-bump.png'),	
+				bumpMap: bumpTexture,
+				bumpScale: 1,
+				//map: THREE.ImageUtils.loadTexture('img/ep400.jpg'),
+				map: texture
+				//map: texture
+			});
+			mesh = new THREE.Mesh(geometry, material);
+			t_scene.add(mesh);
+
+			controls = new THREE.OrbitControls(camera);
+			controls.center = new THREE.Vector3(0, 0, 0);
+			document.body.appendChild(scene.createBumpMap());
+		} else if (!flag) {
+			material.map = texture;
+			material.bumpMap = bumpTexture;
+		}
+		flag = !flag;
+		function render() {
+			if (flag)
+				requestAnimationFrame(render);
+			controls.update();
+			renderer.render(t_scene, camera);
+		};
+		if (flag)
+			requestAnimationFrame(render);
+	}
+
+	game.loaded.handle(function() {
+		scene = new MapScene(game);
+		game.changeScene(scene);
+		game.renderer.handler.addEventListener("mousedown" , onmousedown , false);
+		game.renderer.handler.addEventListener("mousemove" , onmousemove , false);
+		game.renderer.handler.addEventListener("mouseup" ,   onmouseup , false);
+	});
+}
+</script>
+</head>
+<body>
+	<div id="pos">
+		<div>
+			phy x: <span id="x"></span>
+			phy y: <span id="y"></span>
+		</div>
+		<div>
+			log x: <span id="lx"></span>
+			log y: <span id="ly"></span>
+		</div>
+	</div>
+	<div id="fps_show"></div>
+	<input type="button" value="地球儀"　id="earth" onclick="earth_switch()"/>
+	<table>
+		<tr>
+			<td valign="top">
+				<div id="jgame"></div>
+			</td>
+			<td valign="top">
+				<div id="three"></div>
+			</td>
+		</tr>
+	</table>
+</body>
+</html>

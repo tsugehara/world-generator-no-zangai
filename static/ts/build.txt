@@ -1,0 +1,5 @@
+../../jgame.js/lib/jgame.d.ts
+world.ts
+test.ts
+--out ../js/map.jgame.js
+--declaration

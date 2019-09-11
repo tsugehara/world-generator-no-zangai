@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script type="text/javascript" src="/js/jgame.js"></script>
+<script type="text/javascript" src="js/map.jgame.js"></script>
+<script type="text/javascript">
+function getImageData(image) {
+	var canvas = createCanvas(image.width, image.height);
+	var context = canvas.getContext("2d");
+	context.drawImage(image, 0, 0);
+	return context.getImageData(0, 0, image.width, image.height);
+}
+onload = function() {
+	var game = new Game(400, 600);
+	var scene;
+	game.preload({
+		img: "仮説3.png",
+		ep400: "ep400.jpg"
+	});
+	var x_con = document.getElementById("x");
+	var y_con = document.getElementById("y");
+	var lx_con = document.getElementById("lx");
+	var ly_con = document.getElementById("ly");
+	var scale = {
+		x: 180 / (400 / 2),
+		y: 90 / (200 / 2)
+	}
+	var getLatitude = function(y) {
+		return (100-y) * scale.y;
+	}
+	var getLongitude = function(x) {
+		return (200-x) * scale.x;
+	}
+	/*
+	var onmousedown = function(e) {
+		var org = getImageData(game.r("ep400"));
+		var pos = {
+			x: e.offsetX,
+			y: e.offsetY
+		}
+		if (pos.x < 0 || pos.y < 0 || pos.x >= 400 || pos.y >= 200)
+			return;
+		pos.lx = getLongitude(pos.x);
+		pos.ly = getLatitude(pos.y);
+		pos.x2 = 200 - pos.x;
+		pos.y2 = 100 - pos.y;
+
+		var canvas = scene.map.image;
+		var context = canvas.getContext("2d");
+		context.clearRect(0, 0, 400, 200);
+		var image = context.getImageData(0, 0, 400, 200);
+
+		for (var y=0; y<200; y++) {
+			var y3 = y + pos.y2;
+			while (y3 >= 200)
+				y3 -= 200;
+			while (y3 < 0)
+				y3 += 200;
+			var latitude = getLatitude(y3);
+
+			var cos = Math.cos(latitude / 180 * Math.PI);
+			for (var x=0; x<400; x++) {
+				var x3 = x + pos.x2;
+				while (x3 >= 400)
+					x3 -= 400;
+				while (x3 < 0)
+					x3 += 400;
+				var lx = getLongitude(x3);
+				var x2 = Math.round((x3-200) * cos + 200);
+				//var x2 = Math.round(200 - lx * cos / scale.x);
+
+				var y2 = y;
+				image.data[x2*4+y2*400*4+0] = org.data[x3*4+y3*400*4+0];
+				image.data[x2*4+y2*400*4+1] = org.data[x3*4+y3*400*4+1];
+				image.data[x2*4+y2*400*4+2] = org.data[x3*4+y3*400*4+2];
+				image.data[x2*4+y2*400*4+3] = org.data[x3*4+y3*400*4+3];
+			}
+		}
+
+		context.putImageData(image, 0, 0);
+		scene.map.updated();
+	}
+	*/
+	var onmousedown = function(e) {
+		var org = getImageData(game.r("ep400"));
+
+		var canvas = scene.map.image;
+		var context = canvas.getContext("2d");
+		context.clearRect(0, 0, 400, 200);
+		var image = context.getImageData(0, 0, 400, 200);
+		for (var y=0; y<200; y++) {
+			var latitude = getLatitude(y);
+			var cos = Math.cos(latitude / 180 * Math.PI);
+			for (var x=0; x<400; x++) {
+				var x2 = Math.round((x-200) * cos + 200);
+
+				if (x2 < 0 || x2 > 399)
+					continue;
+				var y2 = y;
+				image.data[x2*4+y2*400*4+0] = org.data[x*4+y*400*4+0];
+				image.data[x2*4+y2*400*4+1] = org.data[x*4+y*400*4+1];
+				image.data[x2*4+y2*400*4+2] = org.data[x*4+y*400*4+2];
+				image.data[x2*4+y2*400*4+3] = org.data[x*4+y*400*4+3];
+			}
+		}
+
+		context.putImageData(image, 0, 0);
+		scene.map.updated();
+
+		var canvas2 = scene.map2.image;
+		var context2 = canvas2.getContext("2d");
+		context2.clearRect(0, 0, 400, 200);
+		var image2 = context2.getImageData(0, 0, 400, 200);
+		for (var y=0; y<200; y++) {
+			var latitude = getLatitude(y);
+			var cos = Math.cos(latitude / 180 * Math.PI);
+			for (var x=0; x<400; x++) {
+				var x2 = Math.round((x-200) * cos + 200);
+
+				if (x2 < 0 || x2 > 399)
+					continue;
+				var y2 = y;
+				image2.data[x*4+y*400*4+0] = image.data[x2*4+y2*400*4+0];
+				image2.data[x*4+y*400*4+1] = image.data[x2*4+y2*400*4+1];
+				image2.data[x*4+y*400*4+2] = image.data[x2*4+y2*400*4+2];
+				image2.data[x*4+y*400*4+3] = image.data[x2*4+y2*400*4+3];
+			}
+		}
+		context2.putImageData(image2, 0, 0);
+		scene.map2.updated();
+	}
+
+	var onmousemove = function(e) {
+		var pos = {
+			x: e.offsetX,
+			y: e.offsetY
+		}
+		if (pos.x < 0 || pos.y < 0 || pos.x >= 400 || pos.y >= 200)
+			return;
+		x_con.innerHTML = pos.x;
+		y_con.innerHTML = pos.y;
+		pos.lx = Math.round(getLongitude(pos.x) * 100) / 100;//(200-pos.x) * scale.x;
+		pos.ly = Math.round(getLatitude(pos.y) * 100) / 100;//(100-pos.y) * scale.y;
+
+		lx_con.innerHTML = pos.lx;
+		ly_con.innerHTML = pos.ly;
+	}
+	var onmouseup = function(e) {
+
+	}
+	game.loaded.handle(function() {
+		scene = new TestScene(game);
+		/*
+		var img = getImageData(game.r("img"));
+		var e = getImageData(game.r("img"));
+		*/
+		game.changeScene(scene);
+		game.renderer.handler.addEventListener("mousedown" , onmousedown , false);
+		game.renderer.handler.addEventListener("mousemove" , onmousemove , false);
+		game.renderer.handler.addEventListener("mouseup" ,   onmouseup , false);
+	});
+}
+</script>
+</head>
+<body>
+	<div id="pos">
+		<div>
+			phy x: <span id="x"></span>
+			phy y: <span id="y"></span>
+		</div>
+		<div>
+			log x: <span id="lx"></span>
+			log y: <span id="ly"></span>
+		</div>
+	</div>
+	<div id="fps_show"></div>
+</body>
+</html>
